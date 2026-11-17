@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixell: Мобильный Помощник</title>
+    <style>
+        /* Стили адаптации под экраны телефонов */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #111216;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+            box-sizing: border-box;
+        }
+
+        /* Корпус Тамагочи под мобильный экран (вертикальный) */
+        .game-container {
+            background: #fe5f55;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: inset -4px -4px 0px #c0392b, 0 10px 25px rgba(0,0,0,0.5);
+            width: 92%;
+            max-width: 380px; /* Чтобы отлично смотрелось на любом iPhone/Android */
+            text-align: center;
+            border: 3px solid #333;
+        }
+
+        h2 { 
+            font-size: 16px; 
+            margin: 0 0 12px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            text-shadow: 2px 2px #333;
+        }
+
+        /* Ретро-экран */
+        .retro-screen {
+            background: #a3b19b;
+            border: 5px solid #333;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            color: #222;
+            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.2);
+            min-height: 240px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        /* Шкалы */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 11px;
+            margin: 3px 0;
+        }
+        .bar-outer {
+            background: #7d8a76;
+            border: 2px solid #222;
+            height: 8px;
+            width: 50%;
+            overflow: hidden;
+        }
+        .bar-inner {
+            height: 100%;
+            width: 100%;
+            background: #222;
+            transition: width 0.3s ease;
+        }
+
+        /* Отрисовка Пиксельного Персонажа */
+        .pet-visual-zone {
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .pixell-monster {
+            width: 44px;
+            height: 44px;
+            background: #222;
+            position: relative;
+        }
+        .bounce {
+            animation: jump 0.6s infinite alternate;
+        }
+        @keyframes jump {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-6px); }
+        }
+        .eyes {
+            position: absolute;
+            top: 12px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 6px;
+            box-sizing: border-box;
+        }
+        .eye { width: 7px; height: 7px; background: #a3b19b; }
+
+        /* Диалоговое окно */
+        .speech-bubble {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            min-height: 38px;
+            border-top: 2px dashed #222;
+            padding-top: 6px;
+            line-height: 1.3;
+        }
+
+        /* Экран упражнений и советов */
+        .exercise-overlay {
+            display: none;
+            text-align: center;
+            padding: 5px 0;
+        }
+        .exercise-overlay p { font-size: 12px; font-weight: bold; line-height: 1.3; margin: 0 0 8px 0; }
+        .tip-box {
+            font-size: 10px;
+            background: rgba(0,0,0,0.07);
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px dashed #222;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        #timer { font-size: 26px; margin: 5px 0; color: #962d22; font-weight: bold; }
+
+        /* Мобильная сетка кнопок (2х2, чтобы удобно нажимать пальцами) */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 0 5px;
+        }
+        .round-button {
+            height: 65px;
+            border-radius: 16px; /* Чуть более квадратные для мобильного удобства */
+            border: 3px solid #333;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px #333;
+            box-shadow: 0 4px 0px #333;
+            transition: transform 0.1s, box-shadow 0.1s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            -webkit-tap-highlight-color: transparent; /* Убирает синюю рамку клика на телефонах */
+        }
+        .round-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0px #333;
+        }
+        .round-button:disabled {
+            opacity: 0.4;
+            transform: none;
+            box-shadow: 0 4px 0px #333;
+        }
+        .btn-eyes { background: #e67e22; }
+        .btn-head { background: #9b59b6; }
+        .btn-hands { background: #27ae60; }
+        .btn-breath { background: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h2>Pixell: Mobile v2.5</h2>
+    
+    <div class="retro-screen">
+        <div id="game-ui">
+            <div class="stat-row">
+                <span>ГЛАЗА/ГОЛОВА</span>
+                <div class="bar-outer"><div id="food-bar" class="bar-inner"></div></div>
+            </div>
+            <div class="stat-row">
+                <span>РУКИ/ДЫХАНИЕ</span>
+                <div class="bar-outer"><div id="sleep-bar" class="bar-inner"></div></div>
+            </div>
+
+            <div class="pet-visual-zone">
+                <div id="monster-mesh" class="pixell-monster bounce">
+                    <div class="eyes" id="monster-eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="speech-bubble" id="status-text">Я В ПОРЯДКЕ! УЧИСЬ, НО НЕ ЗАБЫВАЙ НАЖИМАТЬ КНОПКИ ПАУЗЫ.</div>
+        </div>
+
+        <div id="exercise-ui" class="exercise-overlay">
+            <p id="instruction-text">УПРАЖНЕНИЕ...</p>
+            <div id="timer">01:00</div>
+            <div class="tip-box" id="tip-text">ЛАЙФХАК ИЗ СЕТИ...</div>
+        </div>
+    </div>
+
+    <!-- Удобная сетка кнопок под пальцы рук -->
+    <div class="buttons-grid">
+        <button class="round-button btn-eyes" id="cmd-eyes" onclick="runBreak('eyes')">ГЛАЗА 👁️</button>
+        <button class="round-button btn-head" id="cmd-head" onclick="runBreak('head')">ШЕЯ & ГОЛОВА 🧠</button>
+        <button class="round-button btn-hands" id="cmd-hands" onclick="runBreak('hands')">КИСТИ & РУКИ ✍️</button>
+        <button class="round-button btn-breath" id="cmd-breath" onclick="runBreak('breath')">ДЫХАНИЕ 🫁</button>
+    </div>
+</div>
+
+<script>
+    let upperStat = 100;
+    let lowerStat = 100;
+    let lockControls = false;
+
+    // База интересных советов из интернета по борьбе со стрессом
+    const internetTips = [
+        "💡 Интернет-совет: Правило 20-20-20. Каждые 20 минут смотрите на 20 метров вдаль в течение 20 секунд. Это спасает глаза.",
+        "💡 Лайфхакер: Если пить воду мелкими глотками во время стресса, мозг переключается и снижает уровень тревоги.",
+        "💡 Факт: Ученые выяснили, что жевание жвачки снижает уровень гормона стресса (кортизола) на 12%.",
+        "💡 Совет из сети: Держите на столе цитрусовый фрукт. Запах лимона или апельсина бодрит мозг лучше кофе.",
+        "💡 Исследование: Всего 10 минут сидения в полной тишине без гаджетов перезагружают нервную систему."
+    ];
+
+    const decayTimer = setInterval(() => {
+        if (lockControls) return;
+        upperStat = Math.max(0, upperStat - 4);
+        lowerStat = Math.max(0, lowerStat - 3);
+        renderScreen();
+        evaluateMood();
+    }, 4000);
+
+    function renderScreen() {
+        document.getElementById('food-bar').style.width = upperStat + '%';
+        document.getElementById('sleep-bar').style.width = lowerStat + '%';
+    }
+
+    function evaluateMood() {
+        const mesh = document.getElementById('monster-mesh');
+        const eyes = document.getElementById('monster-eyes');
+        const text = document.getElementById('status-text');
+
+        if (upperStat <= 0 && lowerStat <= 0) {
+            mesh.className = "pixell-monster"; 
+            mesh.style.background = "#7d8a76"; 
+            eyes.innerHTML = '<span style="color:#222; font-size:10px; font-weight:bold; margin-top:-3px;">X X</span>';
+            text.innerText = "ПОЛНОЕ ВЫГОРАНИЕ! МНЕ НУЖНА МИНУТА ОТДЫХА!";
+        } else if (upperStat < 40) {
+            mesh.className = "pixell-monster"; 
+            eyes.innerHTML = '<div class="eye" style="height:2px; margin-top:2px;"></div><div class="eye" style="height:2px; margin-top:2px;"></div>'; 
+            text.innerText = "ЭКРАН ОГЛУШИЛ МОЙ МОЗГ. НАЖМИ ОРАНЖЕВУЮ ИЛИ ФИОЛЕТОВУЮ КНОПКУ!";
+        } else if (lowerStat < 40) {
+            mesh.className = "pixell-monster"; 
+            eyes.innerHTML = '<div class="eye" style="margin-top:4px;"></div><div class="eye" style="margin-top:4px;"></div>'; 
+            text.innerText = "МОИ ПИКСЕЛИ ЗАТЕКЛИ. ДАВАЙ СДЕЛАЕМ РАЗМИНКУ ТЕЛА!";
+        } else {
+            mesh.className = "pixell-monster bounce"; 
+            eyes.innerHTML = '<div class="eye"></div><div class="eye"></div>';
