@@ -51,9 +51,18 @@ body{min-height:100vh;display:flex;flex-direction:column;align-items:center;just
 #timer{font-size:26px;color:var(--timer)}
 .tip-box{font-size:11px;font-weight:normal;font-style:italic;margin-top:4px;text-align:left}
 .hint{font-size:10px;opacity:.65;margin-top:8px;text-align:center;font-weight:normal}
+.auth{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 14px;font-size:12px;min-height:34px;max-width:92vw}
+.auth img{width:28px;height:28px;border-radius:50%;border:2px solid var(--tx)}
+.auth span{font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.auth button{font:inherit;font-size:12px;font-weight:bold;padding:8px 12px;border-radius:20px;border:2px solid var(--tx);background:#fff;color:#222;cursor:pointer}
+.auth .g{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-2px;border-radius:50%;background:conic-gradient(#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0)}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+<div class="auth" id="auth"></div>
 <div class="toy">
   <div class="chain" id="chain"></div>
   <div class="ring"></div>
@@ -240,6 +249,51 @@ function drawPet(){
 setInterval(()=>{frame++;blink=Math.random()<.15?1:0;if(celebrate>0)celebrate--;drawPet()},450);
 document.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=icon(e.dataset.ic));
 renderTiles();updateTag();renderScreen();evaluateMood();drawPet();
+</script>
+<script>
+/* ===== Вход через Google (Firebase). Вставьте сюда свою конфигурацию из консоли Firebase ===== */
+const FIREBASE_CONFIG={apiKey:"AIzaSyCKGOfP1jz8Sf2p8phvQSzTh1AiHvKO4yc",authDomain:"pixell-dbffa.firebaseapp.com",projectId:"pixell-dbffa",storageBucket:"pixell-dbffa.firebasestorage.app",messagingSenderId:"777731824651",appId:"1:777731824651:web:bef0ebc279b5bab2b8bb0e"};
+(function(){
+  const box=document.getElementById('auth');
+  if(!FIREBASE_CONFIG.apiKey||typeof firebase==='undefined'){box.style.display='none';return}
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const auth=firebase.auth(),db=firebase.firestore();
+  let uid=null;
+  window.saveCloud=function(){
+    if(!uid)return;
+    db.collection('users').doc(uid).set({breaks:breaks,upper:upperStat,lower:lowerStat,t:Date.now()}).catch(function(){});
+  };
+  const _end=endBreak;
+  endBreak=function(ex){_end(ex);if(ex)window.saveCloud()};
+  function view(u){
+    box.innerHTML='';
+    if(!u){
+      const b=document.createElement('button');
+      b.innerHTML='<i class="g"></i>Войти через Google';
+      b.onclick=function(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(e){alert('Не удалось войти: '+(e.code||e.message))})};
+      box.appendChild(b);return;
+    }
+    const im=document.createElement('img');im.referrerPolicy='no-referrer';im.alt='';if(u.photoURL)im.src=u.photoURL;
+    const n=document.createElement('span');n.textContent=u.displayName||u.email||'Игрок';
+    const o=document.createElement('button');o.textContent='Выйти';o.onclick=function(){auth.signOut()};
+    box.appendChild(im);box.appendChild(n);box.appendChild(o);
+  }
+  auth.onAuthStateChanged(function(u){
+    uid=u?u.uid:null;view(u);
+    if(!u)return;
+    db.collection('users').doc(uid).get().then(function(d){
+      if(d.exists){
+        const x=d.data();
+        breaks=Math.max(breaks,x.breaks||0);
+        if(typeof x.upper==='number')upperStat=x.upper;
+        if(typeof x.lower==='number')lowerStat=x.lower;
+        try{localStorage.setItem('pixell-breaks',breaks)}catch(e){}
+        renderScreen();evaluateMood();updateTag();
+      }
+      window.saveCloud();
+    }).catch(function(){});
+  });
+})();
 </script>
 </body>
 </html>
